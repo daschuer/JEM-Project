@@ -337,6 +337,38 @@ class JemControllerEvent extends JemControllerForm
 	}
 
 	/**
+	 * Saves the registration to the database
+	 *
+	 * @since 0.7
+	 */
+	function userunregister()
+	{
+		// Check for request forgeries
+		JRequest::checkToken() or jexit('Invalid Token');
+
+		$id = JFactory::getApplication()->input->getInt('rdid', 0);
+
+		// Get the model
+		$model = $this->getModel('Event', 'JemModel');
+
+		$model->setId($id);
+		$model->userunregister();
+				
+		JemHelper::updateWaitingList($id);
+
+		JPluginHelper::importPlugin('jem');
+		$dispatcher = JemFactory::getDispatcher();
+		$dispatcher->trigger('onEventUserUnregistered', array($id));
+
+		$cache = JFactory::getCache('com_jem');
+		$cache->clean();
+
+	        $msg = JText::_('COM_JEM_UNREGISTERED_SUCCESSFULL');
+
+		$this->setRedirect(JRoute::_(JemHelperRoute::getEventRoute($id), false), $msg);
+	}
+
+	/**
 	 * Deletes a registered user
 	 */
 	public function delreguser()
@@ -361,7 +393,7 @@ class JemControllerEvent extends JemControllerForm
 		$cache = JFactory::getCache('com_jem');
 		$cache->clean();
 
-		$msg = JText::_('COM_JEM_UNREGISTERED_SUCCESSFULL');
+		$msg = JText::_('COM_JEM_DELREGISTERED_SUCCESSFULL');
 		$this->setRedirect(JRoute::_(JemHelperRoute::getEventRoute($id), false), $msg);
 	}
 }

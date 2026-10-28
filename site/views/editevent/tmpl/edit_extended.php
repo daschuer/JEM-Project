@@ -169,7 +169,10 @@ defined('_JEXEC') or die;
 			<li><?php echo $this->form->getLabel('reginvitedonly'); ?> <?php echo $this->form->getInput('reginvitedonly'); ?></li>
 			<?php endif; ?>
 			<br/>
-			<li><?php echo $this->form->getLabel('unregistra'); ?> <?php echo $this->form->getInput('unregistra'); ?>
+			<li><!-- allow unregistration by default -->
+				<?php if (true) { $this->form->setValue('unregistra', null, 1); } ?>
+				<?php echo $this->form->getLabel('unregistra'); ?> 
+				<?php echo $this->form->getInput('unregistra'); ?>
 				<?php echo $this->form->getInput('unregistra_until'); ?>
 				<span id="jform_unregistra_until2"><?php echo JText::_('COM_JEM_EDITEVENT_FIELD_ANNULATION_UNTIL_POSTFIX'); ?></span>
 			</li>
