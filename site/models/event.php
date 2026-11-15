@@ -933,6 +933,72 @@ class JemModelEvent extends ItemModel
 
         return $registered;
     }
+  
+    /**
+     * Method to get the unregistered users
+     *
+     * @access public
+     * @return object
+     *
+     */
+    function getUnregisters($event = false)
+    {
+        if (empty($event)) {
+            return false;
+        }
+
+        // avatars should be displayed
+        $settings = JEMHelper::globalattribs();
+        $user     = JemFactory::getUser();
+
+        switch ($settings->get('event_show_attendeenames', 2)) {
+            case 0: // show to none
+            default:
+                return false;
+            case 1: // show to admins
+                if (!$user->authorise('core.manage', 'com_jem')) {
+                    return false;
+                }
+                break;
+            case 2: // show to registered
+                if ($user->get('guest')) {
+                    return false;
+                }
+                break;
+            case 3: // show to all
+                break;
+        }
+
+        $avatar = '';
+        $join = '';
+
+        if ($settings->get('event_comunoption','0') == 1 && $settings->get('event_comunsolution','0') == 1) {
+            $avatar = ', c.avatar';
+            $join = ' LEFT JOIN #__comprofiler as c ON c.user_id = r.uid';
+        }
+
+        $name = $settings->get('global_regname','1') ? 'u.name' : 'u.username';
+
+        // Get unregistered users
+        $db = $this->getDbo();
+        $query = $db->getQuery(true);
+        $query = 'SELECT '
+                . $name . ' AS name, r.uid' . $avatar . ', r.comment, r.places'
+                . ' FROM #__jem_register AS r'
+                . ' LEFT JOIN #__users AS u ON u.id = r.uid'
+                . $join
+                . ' WHERE event = '. $db->quote($event)
+                . '   AND status = -1 ';
+        $db->setQuery($query);
+
+        try {
+            $unregistered = $db->loadObjectList();
+        }
+        catch (Exception $e) {
+            $unregistered = false;
+        }
+        return $unregistered;
+    }   
 
     public function setId($id)
     {

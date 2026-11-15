@@ -80,6 +80,7 @@ class JemViewEvent extends JemView
         $this->categories  = $categories;
         $this->item->categories = $categories;
         $this->registers   = null;
+        $this->unregisters = $model->getUnregisters($this->state->get('event.id'));        
 
         $registration      = $this->get('UserRegistration');
 

@@ -222,6 +222,8 @@ use Joomla\CMS\Date\Date;
                     <dt><?php echo $this->form->getLabel('reginvitedonly'); ?></dt>
                     <dd><?php echo $this->form->getInput('reginvitedonly'); ?></dd>
                 <?php endif; ?>
+                <!-- allow unregistration by default -->
+                <?php $this->form->setValue('unregistra', null, 1); ?>
                 <dt><?php echo $this->form->getLabel('unregistra'); ?></dt>
                 <dd><?php echo $this->form->getInput('unregistra'); ?></dd>
                 <dt>

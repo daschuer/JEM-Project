@@ -229,6 +229,9 @@ use Joomla\CMS\Date\Date;
                     <dt><?php echo $this->form->getLabel('reginvitedonly'); ?></dt>
                     <dd><?php echo $this->form->getInput('reginvitedonly'); ?></dd>
                 <?php endif; ?>
+                <dt><!-- allow unregistration by default -->
+                    <?php if (true) { $this->form->setValue('unregistra', null, 1); } ?>
+                </dt>                 
                 <dt><?php echo $this->form->getLabel('unregistra'); ?></dt>
                 <dd><?php echo $this->form->getInput('unregistra'); ?></dd>
                 <dt><label><?php echo Text::_('COM_JEM_EVENT_FIELD_ANNULATION_UNTIL'); ?></label></dt>

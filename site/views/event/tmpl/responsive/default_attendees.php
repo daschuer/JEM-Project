@@ -18,44 +18,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Component\ComponentHelper;
 
 $linkreg = 'index.php?option=com_jem&amp;view=attendees&amp;id='.$this->item->id.($this->itemid ? '&Itemid='.$this->itemid : '');
-$eventLayout = (string) $this->params->get('event_details_layout', '');
-if ($eventLayout === '') {
-    $eventLayout = (string) $this->settings->get('event_details_layout', 'details');
-}
-$layoutOverride = Factory::getApplication()->input->getCmd('jem_layout', '');
-if (in_array($layoutOverride, array('details', 'compact'), true)) {
-    $eventLayout = $layoutOverride;
-}
-
-$renderRegistrationLoginActions = function ($urlLogin, $urlRegister) {
-    $allowUserRegistration = (bool) ComponentHelper::getParams('com_users')->get('allowUserRegistration', 0);
-    $urlLogin = htmlspecialchars($urlLogin, ENT_QUOTES, 'UTF-8');
-    $urlRegister = htmlspecialchars($urlRegister, ENT_QUOTES, 'UTF-8');
-
-    echo '<div class="jem-registration-login-prompt">';
-    echo '<p class="jem-registration-message">'
-        . Text::_($allowUserRegistration ? 'COM_JEM_LOGIN_OR_CREATE_ACCOUNT_FOR_REGISTER' : 'COM_JEM_LOGIN_REQUIRED_FOR_REGISTER')
-        . '</p>';
-    echo '<div class="jem-registration-buttons">';
-    echo '<button class="btn btn-sm btn-warning text-white px-4 py-2" type="button" onclick="location.href=\''
-        . $urlLogin
-        . '\'">'
-        . Text::_('COM_JEM_LOGIN')
-        . '</button>';
-
-    if ($allowUserRegistration) {
-        echo '<button class="btn btn-sm btn-secondary px-4 py-2" type="button" onclick="location.href=\''
-            . $urlRegister
-            . '\'">'
-            . Text::_('COM_JEM_CREATE_ACCOUNT')
-            . '</button>';
-    }
-
-    echo '</div>';
-    echo '</div>';
-};
-$registrationIntro = trim((string) $this->item->params->get('registration_intro', ''));
-$registrationFooter = trim((string) $this->item->params->get('registration_footer', ''));
 ?>
 
 <div class="register<?php echo $eventLayout === 'compact' ? ' jem-registration-compact' : ''; ?>">
@@ -289,6 +251,98 @@ $registrationFooter = trim((string) $this->item->params->get('registration_foote
     <?php if ($eventLayout !== 'compact' && $showRegistrationAction) : ?>
         <hr />
     <?php endif; ?>
+
+    	<dl class="jem-dl floattext">
+		<dt class="register"><?php echo Text::_('COM_JEM_UNREGISTERED_USERS'); ?>:</dt>
+		<dd class="register">
+			<ul class="user floattext">
+			<?php
+			if ($this->settings->get('event_comunsolution', '0') == 1) :
+				if ($this->settings->get('event_comunoption', '0') == 1) :
+					//$cparams = JComponentHelper::getParams('com_media');
+					//$imgpath = $cparams->get('image_path'); // mostly 'images'
+					$imgpath = 'images'; // CB does NOT respect path set in Media Manager, so we have to ignore this too
+					if (File::exists(JPATH_ROOT . '/components/com_comprofiler/plugin/templates/default/images/avatar/tnnophoto_n.png')) {
+						$noimg = 'components/com_comprofiler/plugin/templates/default/images/avatar/tnnophoto_n.png';
+					} elseif (File::exists(JPATH_ROOT . '/components/com_comprofiler/images/english/tnnophoto.jpg')) {
+						$noimg = 'components/com_comprofiler/images/english/tnnophoto.jpg';
+					} else {
+						$noimg = '';
+					}
+				endif;
+			endif;
+	
+      if(!function_exists("jem_getStatusIcon")) {
+        if ($this->settings->get('event_show_more_attendeedetails', '0')) {
+          function jem_getStatusIcon($status) {
+            switch($status) {
+              case 2:  // waiting list
+                return ' <i class="fa fa-li fa-hourglass-half jem-attendance-status-fa-hourglass-half hasTooltip" title="'.Text::_('COM_JEM_ATTENDEES_ON_WAITINGLIST').'"></i>';
+                break;
+              case 1:  // attending
+                return ' <i class="fa fa-li fa-check-circle jem-attendance-status-fa-check-circle hasTooltip" title="'.Text::_('COM_JEM_ATTENDEES_ATTENDING').'"></i>';
+                break;
+              case 0:  // invited
+                return ' <i class="fa fa-li fa-question-circle jem-attendance-status-fa-question-circle hasTooltip" title="'.Text::_('COM_JEM_ATTENDEES_INVITED').'"></i>';
+                break;
+              case -1: // not attending
+                return ' <i class="fa fa-li fa-times-circle jem-attendance-status-fa-times-circle hasTooltip" title="'.Text::_('COM_JEM_ATTENDEES_NOT_ATTENDING').'"></i>';
+                break;
+              default:
+                return $status;
+            }
+          }
+        } else {
+          function jem_getStatusIcon($status) {
+            return ' <i class="fa fa-li fa-check-circle jem-attendance-status-fa-check-circle hasTooltip" title="'.Text::_('COM_JEM_ATTENDEES_ATTENDING').'"></i>';
+          }
+        }
+      }
+
+			// loop through attendees
+			foreach ($this->regs['not_attending'] as $register) :
+				echo '<li class="jem-registered-user">' . jem_getStatusIcon($register->status);
+				$text = '';
+				// is a plugin catching this ?
+				if ($res = $this->dispatcher->triggerEvent('onAttendeeDisplay', array($register->uid, &$text))) :
+					echo $text;
+				endif;
+				// if CB
+				if ($this->settings->get('event_comunsolution', '0') == 1) :
+					if ($this->settings->get('event_comunoption', '0') == 1) :
+						// User has avatar
+						if (!empty($register->avatar)) :
+							if (File::exists(JPATH_ROOT . '/' . $imgpath . '/comprofiler/tn' . $register->avatar)) {
+								$useravatar = JHtml::image($imgpath . '/comprofiler/tn' . $register->avatar, $register->name);
+							} elseif (File::exists(JPATH_ROOT . '/' . $imgpath . '/comprofiler/' . $register->avatar)) {
+								$useravatar = JHtml::image($imgpath . '/comprofiler/' . $register->avatar, $register->name);
+							} else {
+								$useravatar = empty($noimg) ? '' : JHtml::image($noimg, $register->name);
+							}
+							echo '<a href="' . JRoute::_('index.php?option=com_comprofiler&task=userProfile&user=' . $register->uid) . '" title = "' . Text::_('COM_JEM_SHOW_USER_PROFILE') . '">' . $useravatar . ' <span class="username">' . $register->name . '</span></a>';
+
+						// User has no avatar
+						else :
+							$nouseravatar = empty($noimg) ? '' : JHtml::image($noimg, $register->name);
+							echo '<a href="' . JRoute::_('index.php?option=com_comprofiler&task=userProfile&user=' . $register->uid) . '" title = "' . Text::_('COM_JEM_SHOW_USER_PROFILE') .'">' . $nouseravatar . ' <span class="username">' . $register->name . '</span></a>';
+						endif;
+					else :
+						// only show the username with link to profile
+						echo '<span class="username"><a href="' . JRoute::_('index.php?option=com_comprofiler&amp;task=userProfile&amp;user=' . $register->uid) . '">' . $register->name . '</a></span>';
+					endif;
+				// if CB end - if not CB than only name
+				else :
+					// no communitycomponent is set so only show the username
+					echo '<span class="username">' . $register->name . '</span>';
+				endif;
+        
+				echo '</li>';
+			// end loop through attendees
+			endforeach;
+			?>
+			</ul>
+		</dd>
+	</dl>
 
     <?php if ($showRegistrationAction) : ?>
         <dl class="jem-dl floattext jem-registration-action">
